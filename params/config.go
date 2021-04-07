@@ -42,7 +42,7 @@ var CheckpointOracles = map[common.Hash]*CheckpointOracleConfig{}
 var (
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
 	MainnetChainConfig = &ChainConfig{
-		ChainID:             big.NewInt(128),
+		ChainID:             big.NewInt(1280),
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:        nil,
 		DAOForkSupport:      true,
@@ -54,16 +54,15 @@ var (
 		PetersburgBlock:     big.NewInt(0),
 		IstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:    nil,
-
 		Congress: &CongressConfig{
-			Period: 3,
-			Epoch:  200,
+			Period: 5,
+			Epoch:  17280,
 		},
 	}
 
 	// TestnetChainConfig contains the chain parameters to run a node on the YOLOv1 test network.
 	TestnetChainConfig = &ChainConfig{
-		ChainID:             big.NewInt(256),
+		ChainID:             big.NewInt(2560),
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:        nil,
 		DAOForkSupport:      true,
@@ -77,8 +76,8 @@ var (
 		MuirGlacierBlock:    nil,
 		YoloV1Block:         big.NewInt(0),
 		Congress: &CongressConfig{
-			Period: 3,
-			Epoch:  200,
+			Period: 5,
+			Epoch:  17280,
 		},
 	}
 
@@ -203,6 +202,7 @@ func (c *CliqueConfig) String() string {
 type CongressConfig struct {
 	Period uint64 `json:"period"` // Number of seconds between blocks to enforce
 	Epoch  uint64 `json:"epoch"`  // Epoch length to reset votes and checkpoint
+
 }
 
 // String implements the stringer interface, returning the consensus engine details.

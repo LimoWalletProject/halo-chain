@@ -37,12 +37,8 @@ func (cc *chainContext) GetHeader(hash common.Hash, number uint64) *types.Header
 
 func getInteractiveABI() map[string]abi.ABI {
 	abiMap := make(map[string]abi.ABI, 0)
-	tmpABI, _ := abi.JSON(strings.NewReader(validatorsInteractiveABI))
-	abiMap[validatorsContractName] = tmpABI
-	tmpABI, _ = abi.JSON(strings.NewReader(punishInteractiveABI))
-	abiMap[punishContractName] = tmpABI
-	tmpABI, _ = abi.JSON(strings.NewReader(proposalInteractiveABI))
-	abiMap[proposalContractName] = tmpABI
+	tmpABI, _ := abi.JSON(strings.NewReader(HaloConsensusCoreAPI))
+	abiMap[HaloConsensusContractName] = tmpABI
 
 	return abiMap
 }

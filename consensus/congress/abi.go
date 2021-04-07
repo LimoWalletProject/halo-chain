@@ -1,112 +1,61 @@
 package congress
 
-// validatorsInteractiveABI contains all methods to interactive with validator contracts.
-const validatorsInteractiveABI = `
+const HaloConsensusCoreAPI = `
 [
 	{
-		"inputs": [
-		  {
-			"internalType": "address[]",
-			"name": "vals",
-			"type": "address[]"
-		  }
-		],
-		"name": "initialize",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
+		"constant": true,
 		"inputs": [],
-		"name": "distributeBlockReward",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getTopValidators",
-		"outputs": [
-		  {
-			"internalType": "address[]",
+		"name": "blockReward",
+		"outputs": [{
+			"internalType": "uint256",
 			"name": "",
-			"type": "address[]"
-		  }
-		],
+			"type": "uint256"
+		}],
+		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"inputs": [
-		  {
+		"constant": true,
+		"inputs": [],
+		"name": "getTopValidators",
+		"outputs": [{
 			"internalType": "address[]",
-			"name": "newSet",
+			"name": "",
 			"type": "address[]"
-		  },
-		  {
-			"internalType": "uint256",
-			"name": "epoch",
-			"type": "uint256"
-		  }
-		],
+		}],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
 		"name": "updateActiveValidatorSet",
 		"outputs": [],
+		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
-	}
-]
-`
-
-const punishInteractiveABI = `
-[
+	},
 	{
+		"constant": false,
 		"inputs": [],
-		"name": "initialize",
+		"name": "everBlockHandle",
 		"outputs": [],
+		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
-		"inputs": [
-		  {
-			"internalType": "address",
-			"name": "val",
-			"type": "address"
-		  }
-		],
-		"name": "punish",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-		  {
-			"internalType": "uint256",
-			"name": "epoch",
-			"type": "uint256"
-		  }
-		],
-		"name": "decreaseMissedBlocksCounter",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	  }
-]
-`
-
-const proposalInteractiveABI = `
-[
-	{
-		"inputs": [
-		  {
+		"constant": false,
+		"inputs": [{
 			"internalType": "address[]",
 			"name": "vals",
 			"type": "address[]"
-		  }
-		],
+		}],
 		"name": "initialize",
 		"outputs": [],
+		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
 	}
