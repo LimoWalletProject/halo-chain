@@ -68,12 +68,6 @@ var (
 	diffNoTurn = big.NewInt(1) // Block difficulty for out-of-turn signatures
 )
 
-// System contract address.
-var (
-	HaloConsensusContractName = "HaloConsensus"
-	HaloConsensusContractAddr = common.HexToAddress("0x000000000000000000000000000000000000000a")
-)
-
 // Various error messages to mark blocks invalid. These should be private to
 // prevent engine specific errors from being referenced in the remainder of the
 // codebase, inherently breaking if the engine is swapped out. Please put common
@@ -560,7 +554,7 @@ func (c *Congress) Finalize(chain consensus.ChainHeaderReader, header *types.Hea
 	//	}
 	//}
 
-	if err := c.trySendBlockReward(chain, header, state); err != nil {
+	if err := c.handleBlock(chain, header, state); err != nil {
 		return err
 	}
 	// do epoch thing at the end, because it will update active validators
@@ -606,7 +600,7 @@ func (c *Congress) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header
 	//}
 
 	// deposit block reward if any tx exists.
-	if err := c.trySendBlockReward(chain, header, state); err != nil {
+	if err := c.handleBlock(chain, header, state); err != nil {
 		panic(err)
 	}
 
@@ -625,24 +619,25 @@ func (c *Congress) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header
 	return types.NewBlock(header, txs, nil, receipts, new(trie.Trie)), nil
 }
 
-func (c *Congress) trySendBlockReward(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB) error {
+func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB) error {
 
-	fee := state.GetBalance(consensus.FeeRecoder)
-
+	//////////////////////////////////////////////////////
+	/// 处理区块奖励
+	//////////////////////////////////////////////////////
 	// 获取当前区块的奖励数量
 	method := "blockReward"
-	data, err := c.abi[HaloConsensusContractName].Pack(method)
+	data, err := c.abi[ConsensusName].Pack(method)
 	if err != nil {
 		log.Error("Can't pack data for blockReward", "error", err)
 		return err
 	}
-	msg := types.NewMessage(header.Coinbase, &HaloConsensusContractAddr, 0, new(big.Int), math.MaxUint64, new(big.Int), data, false)
+	msg := types.NewMessage(header.Coinbase, &ConsensusContractAddr, 0, new(big.Int), math.MaxUint64, new(big.Int), data, false)
 	result, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig)
 	if err != nil {
 		return err
 	}
 
-	ret, err := c.abi[HaloConsensusContractName].Unpack(method, result)
+	ret, err := c.abi[ConsensusName].Unpack(method, result)
 	if err != nil {
 		return err
 	}
@@ -654,25 +649,38 @@ func (c *Congress) trySendBlockReward(chain consensus.ChainHeaderReader, header 
 		return errors.New("Invalid blockReward format")
 	}
 
-	// 当前交易的手续费归属出块节点
-	state.AddBalance(header.Coinbase, fee)
-
-	// reset fee
-	state.SetBalance(consensus.FeeRecoder, common.Big0)
-
 	// 将奖励写入合约
-	state.AddBalance(HaloConsensusContractAddr, blockReward)
+	if blockReward.Cmp(common.Big0) > 0 {
+		state.AddBalance(ConsensusContractAddr, blockReward)
+	}
 
-	// 处理奖励
+	// 回调合约处理其他数据
 	method = "everBlockHandle"
-	data, err = c.abi[HaloConsensusContractName].Pack(method)
+	data, err = c.abi[ConsensusName].Pack(method)
 	if err != nil {
 		log.Error("Can't pack data for everBlockHandle", "err", err)
 		return err
 	}
 
 	nonce := state.GetNonce(header.Coinbase)
-	msg = types.NewMessage(header.Coinbase, &HaloConsensusContractAddr, nonce, fee, math.MaxUint64, new(big.Int), data, true)
+	msg = types.NewMessage(header.Coinbase, &ConsensusContractAddr, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
+
+	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
+		log.Error("ExecuteMsg EverBlockHandle", "err", err)
+	}
+
+	//////////////////////////////////////////////////////
+	/// 处理矿工费
+	//////////////////////////////////////////////////////
+	method = "distribution"
+	data, err = c.abi[FeeRecoderName].Pack(method)
+	if err != nil {
+		log.Error("Can't pack data for distribution", "err", err)
+		return err
+	}
+
+	nonce = state.GetNonce(header.Coinbase)
+	msg = types.NewMessage(header.Coinbase, &consensus.FeeRecoder, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
 
 	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
 		log.Error("ExecuteMsg EverBlockHandle", "err", err)
@@ -741,8 +749,11 @@ func (c *Congress) initializeSystemContracts(chain consensus.ChainHeaderReader, 
 		addr    common.Address
 		packFun func() ([]byte, error)
 	}{
-		{HaloConsensusContractAddr, func() ([]byte, error) {
-			return c.abi[HaloConsensusContractName].Pack(method, genesisValidators)
+		{ConsensusContractAddr, func() ([]byte, error) {
+			return c.abi[ConsensusName].Pack(method, genesisValidators)
+		}},
+		{consensus.FeeRecoder, func() ([]byte, error) {
+			return c.abi[FeeRecoderName].Pack(method, genesisValidators)
 		}},
 	}
 
@@ -775,13 +786,13 @@ func (c *Congress) getTopValidators(chain consensus.ChainHeaderReader, header *t
 	}
 
 	method := "getTopValidators"
-	data, err := c.abi[HaloConsensusContractName].Pack(method)
+	data, err := c.abi[ConsensusName].Pack(method)
 	if err != nil {
 		log.Error("Can't pack data for getTopValidators", "error", err)
 		return []common.Address{}, err
 	}
 
-	msg := types.NewMessage(header.Coinbase, &HaloConsensusContractAddr, 0, new(big.Int), math.MaxUint64, new(big.Int), data, false)
+	msg := types.NewMessage(header.Coinbase, &ConsensusContractAddr, 0, new(big.Int), math.MaxUint64, new(big.Int), data, false)
 
 	// use parent
 	result, err := executeMsg(msg, statedb, parent, newChainContext(chain, c), c.chainConfig)
@@ -790,7 +801,7 @@ func (c *Congress) getTopValidators(chain consensus.ChainHeaderReader, header *t
 	}
 
 	// unpack data
-	ret, err := c.abi[HaloConsensusContractName].Unpack(method, result)
+	ret, err := c.abi[ConsensusName].Unpack(method, result)
 	if err != nil {
 		return []common.Address{}, err
 	}
@@ -808,7 +819,7 @@ func (c *Congress) getTopValidators(chain consensus.ChainHeaderReader, header *t
 func (c *Congress) updateValidators(vals []common.Address, chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB) error {
 	// method
 	method := "updateActiveValidatorSet"
-	data, err := c.abi[HaloConsensusContractName].Pack(method)
+	data, err := c.abi[ConsensusName].Pack(method)
 	if err != nil {
 		log.Error("Can't pack data for updateActiveValidatorSet", "error", err)
 		return err
@@ -816,7 +827,7 @@ func (c *Congress) updateValidators(vals []common.Address, chain consensus.Chain
 
 	// call contract
 	nonce := state.GetNonce(header.Coinbase)
-	msg := types.NewMessage(header.Coinbase, &HaloConsensusContractAddr, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
+	msg := types.NewMessage(header.Coinbase, &ConsensusContractAddr, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
 	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
 		log.Error("Can't update validators to contract", "err", err)
 		return err
