@@ -670,6 +670,22 @@ func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.
 	}
 
 	//////////////////////////////////////////////////////
+	/// 创世铸币
+	//////////////////////////////////////////////////////
+	method = "tryBurn"
+	data, err = c.abi[GenesisMintName].Pack(method)
+	if err != nil {
+		log.Error("Can't pack data for tryBurn", "err", err)
+	}
+
+	nonce = state.GetNonce(header.Coinbase)
+	msg = types.NewMessage(header.Coinbase, &GenesisMintContractAddr, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
+
+	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
+		log.Error("ExecuteMsg EverBlockHandle", "err", err)
+	}
+
+	//////////////////////////////////////////////////////
 	/// 处理矿工费
 	//////////////////////////////////////////////////////
 	method = "distribution"
@@ -749,11 +765,25 @@ func (c *Congress) initializeSystemContracts(chain consensus.ChainHeaderReader, 
 		addr    common.Address
 		packFun func() ([]byte, error)
 	}{
+		// 共识机制
 		{ConsensusContractAddr, func() ([]byte, error) {
-			return c.abi[ConsensusName].Pack(method, genesisValidators)
+			return c.abi[InitializeName].Pack(method, genesisValidators)
 		}},
+		// 创世铸币
+		{GenesisMintContractAddr, func() ([]byte, error) {
+			return c.abi[InitializeName].Pack(method, genesisValidators)
+		}},
+		// 域名服务
+		{CNSContractAddr, func() ([]byte, error) {
+			return c.abi[InitializeName].Pack(method, genesisValidators)
+		}},
+		// 关系服务
+		{RelationsContractAddr, func() ([]byte, error) {
+			return c.abi[InitializeName].Pack(method, genesisValidators)
+		}},
+		// 矿工费管理
 		{consensus.FeeRecoder, func() ([]byte, error) {
-			return c.abi[FeeRecoderName].Pack(method, genesisValidators)
+			return c.abi[InitializeName].Pack(method, genesisValidators)
 		}},
 	}
 
