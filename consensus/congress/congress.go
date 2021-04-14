@@ -624,7 +624,6 @@ func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.
 	//////////////////////////////////////////////////////
 	/// 处理区块奖励
 	//////////////////////////////////////////////////////
-	// 获取当前区块的奖励数量
 	method := "blockReward"
 	data, err := c.abi[ConsensusName].Pack(method)
 	if err != nil {
@@ -682,7 +681,7 @@ func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.
 	msg = types.NewMessage(header.Coinbase, &GenesisMintContractAddr, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
 
 	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
-		log.Error("ExecuteMsg EverBlockHandle", "err", err)
+		log.Error("ExecuteMsg GenesisMint.tryBurn", "err", err)
 	}
 
 	//////////////////////////////////////////////////////
@@ -699,7 +698,7 @@ func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.
 	msg = types.NewMessage(header.Coinbase, &consensus.FeeRecoder, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
 
 	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
-		log.Error("ExecuteMsg EverBlockHandle", "err", err)
+		log.Error("ExecuteMsg FeeRecoder.distribution", "err", err)
 	}
 
 	return nil

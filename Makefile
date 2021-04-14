@@ -12,6 +12,12 @@ GOBIN = ./build/bin
 GO ?= latest
 GORUN = env GO111MODULE=on go run
 
+bootnode:
+	$(GORUN) build/ci.go install ./cmd/bootnode
+
+gho: bootnode
+	$(GORUN) build/ci.go install ./cmd/gho
+
 geth:
 	$(GORUN) build/ci.go install ./cmd/geth
 	@echo "Done building."
