@@ -737,6 +737,10 @@ func (c *Congress) initializeSystemContracts(chain consensus.ChainHeaderReader, 
 		{ConsensusContractAddr, func() ([]byte, error) {
 			return c.abi[InitializeName].Pack(method, genesisValidators)
 		}},
+		// 跨链桥
+		{BridgeContractAddress, func() ([]byte, error) {
+			return c.abi[InitializeName].Pack(method, genesisValidators)
+		}},
 		// 系统时间监听
 		{SystemEventObserverContractAddress, func() ([]byte, error) {
 			return c.abi[InitializeName].Pack(method, genesisValidators)

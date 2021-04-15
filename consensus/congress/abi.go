@@ -7,7 +7,9 @@ var (
 	GenesisMintContractAddr = common.HexToAddress("0x000000000000000000000000000000000000000B")
 	CNSContractAddr = common.HexToAddress("0x000000000000000000000000000000000000000C")
 	RelationsContractAddr = common.HexToAddress("0x000000000000000000000000000000000000000D")
+	BridgeContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000E")
 	SystemEventObserverContractAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
+
 )
 
 const SystemEventObserverName = "SystemEventObserver"
