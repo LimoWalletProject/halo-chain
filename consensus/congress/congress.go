@@ -653,52 +653,21 @@ func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.
 		state.AddBalance(ConsensusContractAddr, blockReward)
 	}
 
-	// 回调合约处理其他数据
-	method = "everBlockHandle"
-	data, err = c.abi[ConsensusName].Pack(method)
+	//////////////////////////////////////////////////////
+	/// 调用链上的事件回调
+	//////////////////////////////////////////////////////
+	method = "_systemEventNewBlockHandle"
+	data, err = c.abi[SystemEventObserverName].Pack(method)
 	if err != nil {
-		log.Error("Can't pack data for everBlockHandle", "err", err)
+		log.Error("Can't pack data for _systemEventNewBlockHandle", "err", err)
 		return err
 	}
 
 	nonce := state.GetNonce(header.Coinbase)
-	msg = types.NewMessage(header.Coinbase, &ConsensusContractAddr, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
+	msg = types.NewMessage(header.Coinbase, &SystemEventObserverContractAddress, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
 
 	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
-		log.Error("ExecuteMsg EverBlockHandle", "err", err)
-	}
-
-	//////////////////////////////////////////////////////
-	/// 创世铸币
-	//////////////////////////////////////////////////////
-	method = "tryBurn"
-	data, err = c.abi[GenesisMintName].Pack(method)
-	if err != nil {
-		log.Error("Can't pack data for tryBurn", "err", err)
-	}
-
-	nonce = state.GetNonce(header.Coinbase)
-	msg = types.NewMessage(header.Coinbase, &GenesisMintContractAddr, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
-
-	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
-		log.Error("ExecuteMsg GenesisMint.tryBurn", "err", err)
-	}
-
-	//////////////////////////////////////////////////////
-	/// 处理矿工费
-	//////////////////////////////////////////////////////
-	method = "distribution"
-	data, err = c.abi[FeeRecoderName].Pack(method)
-	if err != nil {
-		log.Error("Can't pack data for distribution", "err", err)
-		return err
-	}
-
-	nonce = state.GetNonce(header.Coinbase)
-	msg = types.NewMessage(header.Coinbase, &consensus.FeeRecoder, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
-
-	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
-		log.Error("ExecuteMsg FeeRecoder.distribution", "err", err)
+		log.Error("ExecuteMsg _systemEventNewBlockHandle", "err", err)
 	}
 
 	return nil
@@ -766,6 +735,10 @@ func (c *Congress) initializeSystemContracts(chain consensus.ChainHeaderReader, 
 	}{
 		// 共识机制
 		{ConsensusContractAddr, func() ([]byte, error) {
+			return c.abi[InitializeName].Pack(method, genesisValidators)
+		}},
+		// 系统时间监听
+		{SystemEventObserverContractAddress, func() ([]byte, error) {
 			return c.abi[InitializeName].Pack(method, genesisValidators)
 		}},
 		// 创世铸币
@@ -859,6 +832,27 @@ func (c *Congress) updateValidators(vals []common.Address, chain consensus.Chain
 	msg := types.NewMessage(header.Coinbase, &ConsensusContractAddr, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
 	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
 		log.Error("Can't update validators to contract", "err", err)
+		return err
+	}
+	epochVals, err := c.getTopValidators(chain, header)
+	if err != nil {
+		log.Error("can't get topValidators", "error", err)
+		return err
+	}
+
+	// 新纪元开始
+	method = "_systemEventNewEpochHandle"
+	data, err = c.abi[SystemEventObserverName].Pack(method, epochVals)
+	if err != nil {
+		log.Error("Can't pack data for _systemEventNewEpochHandle", "error", err)
+		return err
+	}
+
+	// call contract
+	nonce = state.GetNonce(header.Coinbase)
+	msg = types.NewMessage(header.Coinbase, &SystemEventObserverContractAddress, nonce, new(big.Int), math.MaxUint64, new(big.Int), data, true)
+	if _, err := executeMsg(msg, state, header, newChainContext(chain, c), c.chainConfig); err != nil {
+		log.Error("Can't call _systemEventNewEpochHandle to contract", "err", err)
 		return err
 	}
 
@@ -1021,7 +1015,7 @@ func (c *Congress) Close() error {
 // controlling the validator voting.
 func (c *Congress) APIs(chain consensus.ChainHeaderReader) []rpc.API {
 	return []rpc.API{{
-		Namespace: "congress",
+		Namespace: "HPOS",
 		Version:   "1.0",
 		Service:   &API{chain: chain, congress: c},
 		Public:    false,

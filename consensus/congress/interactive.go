@@ -40,20 +40,11 @@ func getInteractiveABI() map[string]abi.ABI {
 	tmpABI, _ := abi.JSON(strings.NewReader(InitializeABI))
 	abiMap[InitializeName] = tmpABI
 
-	tmpABI, _ = abi.JSON(strings.NewReader(CNSABI))
-	abiMap[CNSName] = tmpABI
-
 	tmpABI, _ = abi.JSON(strings.NewReader(ConsensusABI))
 	abiMap[ConsensusName] = tmpABI
 
-	tmpABI, _ = abi.JSON(strings.NewReader(GenesisMintABI))
-	abiMap[GenesisMintName] = tmpABI
-
-	tmpABI, _ = abi.JSON(strings.NewReader(RelationsABI))
-	abiMap[RelationsName] = tmpABI
-
-	tmpABI, _ = abi.JSON(strings.NewReader(FeeRecoderABI))
-	abiMap[FeeRecoderName] = tmpABI
+	tmpABI, _ = abi.JSON(strings.NewReader(SystemEventObserverABI))
+	abiMap[SystemEventObserverName] = tmpABI
 
 	return abiMap
 }
