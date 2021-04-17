@@ -741,6 +741,10 @@ func (c *Congress) initializeSystemContracts(chain consensus.ChainHeaderReader, 
 		{BridgeContractAddress, func() ([]byte, error) {
 			return c.abi[InitializeName].Pack(method, genesisValidators)
 		}},
+		// 跨链资产锚定
+		{BridgeAnchorContractAddress, func() ([]byte, error) {
+			return c.abi[InitializeName].Pack(method, genesisValidators)
+		}},
 		// 系统时间监听
 		{SystemEventObserverContractAddress, func() ([]byte, error) {
 			return c.abi[InitializeName].Pack(method, genesisValidators)

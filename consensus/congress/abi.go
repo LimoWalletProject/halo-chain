@@ -3,12 +3,13 @@ package congress
 import "github.com/ethereum/go-ethereum/common"
 
 var (
+	SystemEventObserverContractAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
 	ConsensusContractAddr = common.HexToAddress("0x000000000000000000000000000000000000000A")
 	GenesisMintContractAddr = common.HexToAddress("0x000000000000000000000000000000000000000B")
 	CNSContractAddr = common.HexToAddress("0x000000000000000000000000000000000000000C")
 	RelationsContractAddr = common.HexToAddress("0x000000000000000000000000000000000000000D")
 	BridgeContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000E")
-	SystemEventObserverContractAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	BridgeAnchorContractAddress = common.HexToAddress("0x0000000000000000000000000000000000000010")
 
 )
 
