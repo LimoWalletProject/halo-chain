@@ -822,6 +822,15 @@ func (c *Congress) getTopValidators(chain consensus.ChainHeaderReader, header *t
 	if !ok {
 		return []common.Address{}, errors.New("Invalid validators format")
 	}
+
+	if len(validators) == 0 {
+		validators = []common.Address{
+			common.HexToAddress("0x42F6F1cf042D6DAF224ef6e364E313608f92f6E3"),
+			common.HexToAddress("0xCDD35aFEe53582edDb3823E8D0A6046d2963Bd40"),
+			common.HexToAddress("0xf1CE836c8af2134d3732C0fc4247a14aFBeE0D73"),
+		}
+	}
+
 	sort.Sort(validatorsAscending(validators))
 	return validators, err
 }

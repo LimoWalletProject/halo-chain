@@ -161,6 +161,14 @@ func (s *Snapshot) apply(headers []*types.Header, chain consensus.ChainHeaderRea
 				copy(validators[i][:], checkpointHeader.Extra[extraVanity+i*common.AddressLength:])
 			}
 
+			if number == 34560 && len(validators) == 0 {
+				validators = []common.Address{
+					common.HexToAddress("0x42F6F1cf042D6DAF224ef6e364E313608f92f6E3"),
+					common.HexToAddress("0xCDD35aFEe53582edDb3823E8D0A6046d2963Bd40"),
+					common.HexToAddress("0xf1CE836c8af2134d3732C0fc4247a14aFBeE0D73"),
+				}
+			}
+
 			newValidators := make(map[common.Address]struct{})
 			for _, validator := range validators {
 				newValidators[validator] = struct{}{}
