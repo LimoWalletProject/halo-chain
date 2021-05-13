@@ -621,6 +621,8 @@ func (c *Congress) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header
 
 func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB) error {
 
+	//state.acc
+
 	//////////////////////////////////////////////////////
 	/// 处理区块奖励
 	//////////////////////////////////////////////////////
