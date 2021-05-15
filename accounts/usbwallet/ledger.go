@@ -122,7 +122,7 @@ func (w *ledgerDriver) Open(device io.ReadWriter, passphrase string) error {
 	}
 	// Try to resolve the Ethereum app's version, will fail prior to v1.0.2
 	if w.version, err = w.ledgerVersion(); err != nil {
-		w.version = [3]byte{1, 1, 1} // Assume worst case, can't verify if v1.0.0 or v1.0.1
+		w.version = [3]byte{1, 0, 0} // Assume worst case, can't verify if v1.0.0 or v1.0.1
 	}
 	return nil
 }
