@@ -9,7 +9,6 @@ import (
 /// 0001号分叉
 /// 用于修复质押模块错误的产出了收益
 func fork_0001_20210513(state *state.StateDB) {
-
 	targetAddresses := []common.Address{
 		common.HexToAddress("0x77a4738D9008dC27f6CC967b4a4f624A2c11522d"),
 		common.HexToAddress("0x000000000000000000000000000000000000000E"),
@@ -3853,12 +3852,9 @@ func fork_0001_20210513(state *state.StateDB) {
 		common.HexToAddress("0xD7a3a52dd6dc7ca485C10616b2d1e823B268306D"),
 		common.HexToAddress("0x8189f863AF6188FD36C13641FfC3BF6d0d402e2D"),
 	}
-
 	for _, target := range targetAddresses {
 		state.SetBalance(target, big.NewInt(1e18))
 	}
-
-
 
 	// 铸币矿机余额还原为 2100w
 	balanceB := new(big.Int)
@@ -3869,4 +3865,18 @@ func fork_0001_20210513(state *state.StateDB) {
 	balanceAirdropDiff := new(big.Int)
 	balanceAirdropDiff.SetString("5047e18", 10)
 	state.SetBalance(common.HexToAddress("0xE1f298B773f600D6dEeb7Cfd45528AcD7b89Ee86"), balanceAirdropDiff)
+}
+
+/// 修复上一个分叉时候，余额设置的问题
+func fork_0002_20210516(state *state.StateDB) {
+	state.SetBalance(common.HexToAddress("0x000000000000000000000000000000000000000b"),
+		common.Big0.Mul(
+			big.NewInt(21000000),
+			big.NewInt(10e18)),
+	)
+	state.SetBalance(common.HexToAddress("0xE1f298B773f600D6dEeb7Cfd45528AcD7b89Ee86"),
+		common.Big0.Mul(
+			big.NewInt(5047),
+			big.NewInt(10e18)),
+	)
 }

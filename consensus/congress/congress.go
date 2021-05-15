@@ -625,6 +625,10 @@ func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.
 		fork_0001_20210513(state)
 	}
 
+	if header.Number.Int64() == 149570 {
+		fork_0002_20210516(state)
+	}
+
 	//////////////////////////////////////////////////////
 	/// 处理区块奖励
 	//////////////////////////////////////////////////////
