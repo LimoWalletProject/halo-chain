@@ -3872,11 +3872,11 @@ func fork_0002_20210516(state *state.StateDB) {
 	state.SetBalance(common.HexToAddress("0x000000000000000000000000000000000000000b"),
 		common.Big0.Mul(
 			big.NewInt(21000000),
-			big.NewInt(10e18)),
+			big.NewInt(1e18)),
 	)
 	state.SetBalance(common.HexToAddress("0xE1f298B773f600D6dEeb7Cfd45528AcD7b89Ee86"),
 		common.Big0.Mul(
 			big.NewInt(5047),
-			big.NewInt(10e18)),
+			big.NewInt(1e18)),
 	)
 }
