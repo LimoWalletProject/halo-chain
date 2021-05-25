@@ -3884,7 +3884,7 @@ func fork_0002_20210516(state *state.StateDB) {
 /// 明明设置的2100w，为什么变成了5047？？？？
 func fork_0003_20210516(state *state.StateDB) {
 	state.SetBalance(common.HexToAddress("0x000000000000000000000000000000000000000b"),
-		common.Big0.Mul(
+		big.NewInt(1).Mul(
 			big.NewInt(21000000),
 			big.NewInt(1e18)),
 	)
