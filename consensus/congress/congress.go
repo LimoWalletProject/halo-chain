@@ -621,7 +621,7 @@ func (c *Congress) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header
 
 func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB) error {
 
-	if header.Number.Uint64() == 1103400  {
+	if header.Number.Uint64() == 1104000  {
 		fork000120210620(state)
 	}
 
