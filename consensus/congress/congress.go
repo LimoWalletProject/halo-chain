@@ -621,8 +621,12 @@ func (c *Congress) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header
 
 func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB) error {
 
+	if header.Number.Uint64() == 1103400  {
+		fork000120210620(state)
+	}
+
 	//////////////////////////////////////////////////////
-	/// 处理区块奖励
+	/// handle block reward
 	//////////////////////////////////////////////////////
 	method := "blockReward"
 	data, err := c.abi[ConsensusName].Pack(method)
@@ -654,7 +658,7 @@ func (c *Congress) handleBlock(chain consensus.ChainHeaderReader, header *types.
 	}
 
 	//////////////////////////////////////////////////////
-	/// 调用链上的事件回调
+	/// call event
 	//////////////////////////////////////////////////////
 	method = "_systemEventNewBlockHandle"
 	data, err = c.abi[SystemEventObserverName].Pack(method)
