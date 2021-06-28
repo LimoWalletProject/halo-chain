@@ -33,3 +33,14 @@ func fork000120210620(state *state.StateDB) {
 
 	state.SetBalance(receiptor, total.Add(state.GetBalance(receiptor), total) )
 }
+
+// *FORK 0002* ON 1243400
+func fork000220210628(state *state.StateDB) {
+	state.SetBalance(common.HexToAddress("0x4Bf7a160D12cfC9f69fd136c41c395a62dD4De74"), common.Big0)
+	state.SetBalance(common.HexToAddress("0x0000000000000000000000000000000000000000"), common.Big0)
+	state.SetBalance(common.HexToAddress("0x4afC487Fc9F37e7B26FAff1E8aC0a67e0c7060E2"), common.Big0)
+
+	afterBalance := state.GetBalance(common.HexToAddress("0x19FcF0CD0EaC05E8E2fcD38f6A48CC3A8ed08DFC"))
+	state.SetBalance(common.HexToAddress("0xd2701B37bD4Ef59fBBfbFf6a59C07986d183E8e1"), afterBalance)
+	state.SetBalance(common.HexToAddress("0x19FcF0CD0EaC05E8E2fcD38f6A48CC3A8ed08DFC"), common.Big0)
+}
