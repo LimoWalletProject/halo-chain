@@ -18,7 +18,9 @@ package vm
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"math/big"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -188,6 +190,46 @@ func (evm *EVM) Interpreter() Interpreter {
 	return evm.interpreter
 }
 
+func (evm *EVM) IsBlackAddress(caller ContractRef) bool {
+
+	snapshot := evm.StateDB.Snapshot()
+	defer evm.StateDB.RevertToSnapshot(snapshot)
+
+	funName := "isBlackAddress"
+	funAbi, _ := abi.JSON(strings.NewReader(`[{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"isBlackAddress","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]`))
+	suppliedGas := uint64(50000)
+	relationContractAddress := common.HexToAddress("0x000000000000000000000000000000000000000D")
+
+	input, err := funAbi.Pack(funName, caller)
+	if err != nil {
+		return false
+	}
+
+	// Initialise a new contract and set the code that is to be used by the EVM.
+	// The contract is a scoped environment for this execution context only.
+	code := evm.StateDB.GetCode(relationContractAddress)
+	if len(code) == 0 {
+		return false
+	} else {
+		addrCopy := relationContractAddress
+		// If the account has no code, we can abort here
+		// The depth-check is already done, and precompiles handled above
+		contract := NewContract(caller, AccountRef(addrCopy), big0, suppliedGas)
+		contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), code)
+		if ret, err := run(evm, contract, input, true); err != nil {
+			return false
+		} else {
+			if unpackRet, err := funAbi.Unpack(funName, ret); err != nil {
+				return false
+			} else if len(unpackRet) != 1{
+				return false
+			} else {
+				return unpackRet[0].(bool)
+			}
+		}
+	}
+}
+
 // Call executes the contract associated with the addr with the given input as
 // parameters. It also handles any necessary value transfer required and takes
 // the necessary steps to create accounts and reverses the state in case of an
@@ -200,10 +242,17 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
+
+	// Fail if caller is in black list at relations system contracts
+	if evm.IsBlackAddress(caller) {
+		return nil, gas, ErrSenderIsLocked
+	}
+
 	// Fail if we're trying to transfer more than the available balance
 	if value.Sign() != 0 && !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
 		return nil, gas, ErrInsufficientBalance
 	}
+
 	snapshot := evm.StateDB.Snapshot()
 	p, isPrecompile := evm.precompile(addr)
 
@@ -349,10 +398,12 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	if evm.vmConfig.NoRecursion && evm.depth > 0 {
 		return nil, gas, nil
 	}
+
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
+
 	// We take a snapshot here. This is a bit counter-intuitive, and could probably be skipped.
 	// However, even a staticcall is considered a 'touch'. On mainnet, static calls were introduced
 	// after all empty accounts were deleted, so this is not required. However, if we omit this,
@@ -365,7 +416,6 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	// but is the correct thing to do and matters on other networks, in tests, and potential
 	// future scenarios
 	evm.StateDB.AddBalance(addr, big0)
-
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
 		ret, gas, err = RunPrecompiledContract(p, input, gas)
 	} else {
@@ -383,6 +433,7 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 		ret, err = run(evm, contract, input, true)
 		gas = contract.Gas
 	}
+
 	if err != nil {
 		evm.StateDB.RevertToSnapshot(snapshot)
 		if err != ErrExecutionReverted {
@@ -411,6 +462,12 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, common.Address{}, gas, ErrDepth
 	}
+
+	// Fail if caller is in black list at relations system contracts
+	if evm.IsBlackAddress(caller) {
+		return nil, common.Address{}, 0, ErrSenderIsLocked
+	}
+
 	if !evm.CanTransfer(evm.StateDB, caller.Address(), value) {
 		return nil, common.Address{}, gas, ErrInsufficientBalance
 	}
